@@ -11,20 +11,18 @@ import javax.swing.text.Document;
 import org.apache.poi.EncryptedDocumentException;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
 
 import java.awt.event.ActionListener;
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Scanner;
 import java.awt.event.ActionEvent;
@@ -40,20 +38,14 @@ import java.awt.Color;
 import java.awt.Dimension;
 
 import javax.swing.ScrollPaneConstants;
-import javax.swing.JSplitPane;
 import javax.swing.border.LineBorder;
-import java.awt.Rectangle;
 
 public class Main {
 
-	
 	private JFrame frmCowenTest;
-	private final JFileChooser openFileChooser;
 	private JTable table;
 	private String result = "";
 	Object data[][] = new Object[570][10];
-//	Object newPosition[][] = new Object[570][5];
-//	List<String> newPosition = new ArrayList<String>();
 	List<NewPrice> newPosition = new ArrayList<NewPrice>();
 	List<String> originalPositionList = new ArrayList<String>();
 
@@ -78,9 +70,6 @@ public class Main {
 	 */
 	public Main() {
 		initialize();
-		
-		openFileChooser = new JFileChooser();
-		openFileChooser.setFileFilter(new FileNameExtensionFilter("Upload file", "txt", "xls"));
 	}
 	
 	/**
@@ -94,10 +83,25 @@ public class Main {
 		frmCowenTest.getContentPane().setLayout(null);
 		
 		JLabel msgLabel = new JLabel("");
+		msgLabel.setFont(new Font("Lucida Grande", Font.PLAIN, 16));
 		msgLabel.setHorizontalAlignment(SwingConstants.CENTER);
-		msgLabel.setBounds(38, 6, 830, 35);
+		msgLabel.setBounds(18, 6, 850, 35);
 		frmCowenTest.getContentPane().add(msgLabel);
 	
+		// Original Positions
+		JTextPane posField = new JTextPane();
+		posField.setFont(new Font("monospaced", Font.PLAIN, 12));
+		
+		JPanel oldPosPanel = new JPanel(new BorderLayout());
+		oldPosPanel.add(posField);
+		
+		JScrollPane oldPosScrollPane = new JScrollPane(oldPosPanel);
+		oldPosScrollPane.setLocation(18, 53);
+		oldPosScrollPane.setSize(850, 210);
+		oldPosScrollPane.getVerticalScrollBar().setUnitIncrement(16);
+		oldPosScrollPane.getHorizontalScrollBar().setUnitIncrement(16);
+		frmCowenTest.getContentPane().add(oldPosScrollPane);
+		
 		JScrollPane tableScroll = new JScrollPane();
 		tableScroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
 		tableScroll.setBounds(18, 280, 850, 203);
@@ -110,7 +114,6 @@ public class Main {
 		table.setRowHeight(20);
 		table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 		
-
 		TableColumnModel columnModel = table.getColumnModel();
 		columnModel.getColumn(0).setPreferredWidth(70);
 		columnModel.getColumn(1).setPreferredWidth(155);
@@ -128,40 +131,31 @@ public class Main {
 		table.setPreferredScrollableViewportSize(new Dimension(828, 100));
 		table.setFillsViewportHeight(true);
 		
-		JTextPane positionField = new JTextPane();
-		positionField.setFont(new Font("monospaced", Font.PLAIN, 12));
-		
-		JPanel noWrapPanel = new JPanel(new BorderLayout());
-		noWrapPanel.add(positionField);
-		
-		JScrollPane scrollPane = new JScrollPane(noWrapPanel);
-		scrollPane.setLocation(18, 53);
-		scrollPane.setSize(850, 210);
-		scrollPane.getVerticalScrollBar().setUnitIncrement(16);
-		scrollPane.getHorizontalScrollBar().setUnitIncrement(16);
-		frmCowenTest.getContentPane().add(scrollPane);
-		
 
-		JTextPane newPositionsField = new JTextPane();
-		newPositionsField.setFont(new Font("monospaced", Font.PLAIN, 12));
+		JTextPane newPosField = new JTextPane();
+		newPosField.setFont(new Font("monospaced", Font.PLAIN, 12));
 		
-		Document doc = newPositionsField.getDocument();
+		Document doc = newPosField.getDocument();
 		
-		JPanel panel = new JPanel(new BorderLayout());
-		panel.add(newPositionsField);
+		JPanel newPosPanel = new JPanel(new BorderLayout());
+		newPosPanel.add(newPosField);
 		
-		JScrollPane newPositionsScrollPane = new JScrollPane(panel);
-		newPositionsScrollPane.setBounds(20, 500, 850, 250);
-		newPositionsScrollPane.setSize(850, 210);
-		newPositionsScrollPane.getVerticalScrollBar().setUnitIncrement(16);
-		newPositionsScrollPane.getHorizontalScrollBar().setUnitIncrement(16);
-		frmCowenTest.getContentPane().add(newPositionsScrollPane);
+		JScrollPane newPosScrollPane = new JScrollPane(newPosPanel);
+		newPosScrollPane.setBounds(20, 500, 850, 250);
+		newPosScrollPane.setSize(850, 210);
+		newPosScrollPane.getVerticalScrollBar().setUnitIncrement(16);
+		newPosScrollPane.getHorizontalScrollBar().setUnitIncrement(16);
+		frmCowenTest.getContentPane().add(newPosScrollPane);
 		
-		JButton positionButton = new JButton("Load positions");
-		positionButton.addActionListener(new ActionListener() {
+		JButton btnPos = new JButton("Load positions");
+		btnPos.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				int returnValue = openFileChooser.showOpenDialog(frmCowenTest); //Have to reference the frame
-				File file = openFileChooser.getSelectedFile();
+				
+				JFileChooser openOldPosFileChooser = new JFileChooser();
+				openOldPosFileChooser.setFileFilter(new FileNameExtensionFilter(".txt", "txt"));
+
+				int returnValue = openOldPosFileChooser.showOpenDialog(frmCowenTest); //Have to reference the frame
+				File file = openOldPosFileChooser.getSelectedFile();
 				String fileName = file.getAbsolutePath();
 				
 				if (returnValue == JFileChooser.APPROVE_OPTION) {
@@ -172,9 +166,9 @@ public class Main {
 						Scanner scan = new Scanner(file);
 						msgLabel.setText("Loaded File");
 						
-						positionField.read(br, null);
+						posField.read(br, null);
 						
-						positionField.requestFocus();
+						posField.requestFocus();
 						while (scan.hasNextLine()) {
 							positionEntry = scan.nextLine();
 //							 && positionEntry.substring(43, 44).equals("O")
@@ -195,17 +189,18 @@ public class Main {
 			}
 		});
 		
-		positionButton.setBounds(58, 777, 117, 29);
-		frmCowenTest.getContentPane().add(positionButton);
+		btnPos.setBounds(58, 777, 117, 29);
+		frmCowenTest.getContentPane().add(btnPos);
 		
 		// Gets XLS new prices
 		JButton btnUpdatedPrice = new JButton("Load updated price");
 		btnUpdatedPrice.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				int returnValue = openFileChooser.showOpenDialog(frmCowenTest); //Have to reference the frame
-				File file = openFileChooser.getSelectedFile();
+				JFileChooser openNewPosFileChooser = new JFileChooser();
+				openNewPosFileChooser.setFileFilter(new FileNameExtensionFilter(".xls", "xls"));
+				int returnValue = openNewPosFileChooser.showOpenDialog(frmCowenTest); //Have to reference the frame
+				File file = openNewPosFileChooser.getSelectedFile();
 				String fileName = file.getAbsolutePath();
-
 				if (returnValue == JFileChooser.APPROVE_OPTION) {
 					try {
 						Workbook workbook = WorkbookFactory.create(new File(fileName));
@@ -220,7 +215,6 @@ public class Main {
 							if (r == null) {
 								continue;
 							}
-//							
 							// last columns goes to 255+ for some reason, hard coding the last column number for now
 							// Working under assumption of broken XLS file, and the dummy file
 							int lastColumn = 10;
@@ -249,6 +243,7 @@ public class Main {
 					} catch (InvalidFormatException e1) {
 						e1.printStackTrace();
 					}
+					table.setModel(new DefaultTableModel(data.length, 10));
 				} else {
 					msgLabel.setText("No File Chosen");
 				}
@@ -259,8 +254,8 @@ public class Main {
 		frmCowenTest.getContentPane().add(btnUpdatedPrice);
 		
 		//Generate new positions
-		JButton btnGenerateNewPositions = new JButton("Generate new positions file");
-		btnGenerateNewPositions.addActionListener(new ActionListener() {
+		JButton btnGenerateNewPos = new JButton("Generate new positions file");
+		btnGenerateNewPos.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 //				System.out.println("new position");
 				for (int row = 0; row < data.length; row++) {
@@ -274,22 +269,48 @@ public class Main {
 				newPosition();
 				try {
 					for (int originalPosition = 0; originalPosition < originalPositionList.size(); originalPosition++) {
-//						if ("346".equals(originalPositionList.get(originalPosition).substring(0, 3))) {
-							doc.insertString(doc.getLength(), originalPositionList.get(originalPosition), null);
-							doc.insertString(doc.getLength(), "\n", null);
-//						}
+						doc.insertString(doc.getLength(), originalPositionList.get(originalPosition), null);
+						doc.insertString(doc.getLength(), "\n", null);
 					}
-					
 				} catch (BadLocationException e1) {
 					e1.printStackTrace();
 				}
-				newPositionsField.requestFocus();
+				newPosField.requestFocus();
 			}
 		});
-		btnGenerateNewPositions.setBounds(465, 777, 197, 29);
-		frmCowenTest.getContentPane().add(btnGenerateNewPositions);
+		btnGenerateNewPos.setBounds(465, 777, 197, 29);
+		frmCowenTest.getContentPane().add(btnGenerateNewPos);
 		
 		JButton btnSaveAs = new JButton("Save As");
+		btnSaveAs.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				FileWriter out = null;
+				JFileChooser saveFileChooser = new JFileChooser();
+				saveFileChooser.setFileFilter(new FileNameExtensionFilter(".txt", "txt"));
+				if (saveFileChooser.showSaveDialog(frmCowenTest) == JFileChooser.APPROVE_OPTION) {
+				  File file = saveFileChooser.getSelectedFile();
+					try {
+						System.out.println(saveFileChooser.getCurrentDirectory());
+						System.out.println(saveFileChooser.getSelectedFile().getName());
+						file = new File(saveFileChooser.getCurrentDirectory(), saveFileChooser.getSelectedFile().getName() + ".txt");
+						out = new FileWriter(file);
+						out.write(newPosField.getText());
+						out.close();
+						msgLabel.setText("File saved");
+					} catch (FileNotFoundException exception) {
+						exception.printStackTrace();
+						msgLabel.setText("Error in saving");
+					} catch (IOException exception) {
+						exception.printStackTrace();
+						msgLabel.setText("Error in saving");
+					}
+				} else {
+					msgLabel.setText("No selection");
+				}
+
+
+			}
+		});
 		btnSaveAs.setBounds(713, 777, 117, 29);
 		frmCowenTest.getContentPane().add(btnSaveAs);
 		
@@ -302,8 +323,6 @@ public class Main {
 //		System.out.println(originalPositionList.size());
 //		System.out.println(newPosition.size());
 //		newPosition.size()
-		int testCtrl1 = 5;
-//		System.out.println("XLK130".toLowerCase().contains("XLK".toLowerCase()));
 		for (int originalPositionCount = 1; originalPositionCount < originalPositionList.size(); originalPositionCount++) {
 //			System.out.println(originalPositionList.get(originalPositionCount).substring(19, 24).trim());
 //			System.out.println(originalPositionList.get(originalPositionCount).substring(19, 24).trim().isEmpty());
@@ -340,13 +359,8 @@ public class Main {
 							originalPositionList.set(originalPositionCount, newString);
 						}
 					}
-//					System.out.println(newPosition.get(newPositionCount).getTicker());
-//					System.out.println(originalPositionList.get(originalPositionCount).substring(44, 56));
-//					&& "o".equals(originalPositionList.get(originalPositionCount).substring(43, 44).toLowerCase())
-					
 				}
 			}
-//			System.out.println("===============");
 		}
 
 	}
@@ -369,14 +383,11 @@ class NewPrice {
 		String priceStr = Double.toString(Double.valueOf(df.format(price)));
 		
 		int lengthOfPrice = priceStr.substring(priceStr.indexOf(".")).length();
-		System.out.println(priceStr);
-		System.out.println(lengthOfPrice);
 		for(int i = 0; i < 7 - lengthOfPrice; i++) {
 			priceStr += "0";
 		}
 		priceStr = priceStr.replace(".", "");
 		priceStr = ("000000000000" + priceStr).substring(priceStr.length());
-		System.out.println(priceStr);
 		return priceStr;
 	}
 
@@ -401,7 +412,6 @@ class NewPrice {
 			return "";
 		}
 		return ticker;
-
 	}
 
 	public String getTicker() {
@@ -416,7 +426,6 @@ class NewPrice {
 		return callOrPut;
 	}
 
-
 	public String getOldPrice() {
 		return oldPrice;
 	}
@@ -425,13 +434,4 @@ class NewPrice {
 		return newPrice;
 	}
 
-}
-
-
-class CustomButton extends JButton {
-	CustomButton(int x, int y, int width, int height) {
-		System.out.println("new jbutton");
-	}
-
-	
 }
