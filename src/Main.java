@@ -28,9 +28,6 @@ public class Main extends JFrame{
 	List<NewPosition> newPosition = new ArrayList<NewPosition>();
 	List<String> originalPositionList = new ArrayList<String>();
 
-	/**
-	 * Launch the application.
-	 */
 	public static void main(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
@@ -43,12 +40,9 @@ public class Main extends JFrame{
 		});
 	}
 
-	/**
-	 * Create the application.
-	 */
 	public Main() {
 		setTitle("Cowen Test");
-		setBounds(100, 100, 900, 850);
+		setBounds(100, 0, 900, 650);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		getContentPane().setLayout(null);
 		
@@ -227,15 +221,13 @@ public class Main extends JFrame{
 					}
 				}
 			});
-			btnPos.setBounds(58, 777, 117, 29);
-			add(btnPos);
 	}
 
 	private void makePosBtn() {
-		btnPos = new Button("Load Positions", 58, 777, 117, 29);
-		btnUpdatedPrice = new Button("Load updated price", 250, 777, 152, 29);
-		btnGenerateNewPos = new Button("Generate New Positions", 465, 777, 197, 29);
-		btnSaveAs = new Button("Save As", 713, 777, 117, 29);
+		btnPos = new Button("Load Positions", 50, 580, 117, 29);
+		btnUpdatedPrice = new Button("Load updated price", 235, 580, 152, 29);
+		btnGenerateNewPos = new Button("Generate New Positions", 450, 580, 197, 29);
+		btnSaveAs = new Button("Save As", 725, 580, 117, 29);
 		
 		add(btnPos);
 		add(btnUpdatedPrice);
@@ -249,9 +241,9 @@ public class Main extends JFrame{
 	}
 	
 	private void makeScroll() {
-		oldPosScroll = new ScrollPane(oldPosPanel, 18, 53, 850, 210);
-		tableScroll = new ScrollPane(18, 280, 850, 203);
-		newPosScrollPane = new ScrollPane(newPosPanel, 20, 500, 850, 250);
+		oldPosScroll = new ScrollPane(oldPosPanel, 18, 50, 850, 165);
+		tableScroll = new ScrollPane(18, 225, 850, 165);
+		newPosScrollPane = new ScrollPane(newPosPanel, 18, 400, 850, 165);
 		add(oldPosScroll);
 		add(tableScroll);
 		add(newPosScrollPane);	

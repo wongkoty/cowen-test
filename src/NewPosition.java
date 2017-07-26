@@ -3,7 +3,7 @@ import java.text.DecimalFormat;
 class NewPosition {
 	String ticker, secType, oldPrice, newPrice, callOrPut;
 	
-	NewPosition (String ticker, double oldPrice, String secType, double newPrice, String callOrPut) {
+	public NewPosition (String ticker, double oldPrice, String secType, double newPrice, String callOrPut) {
 		this.ticker = this.normalizeTicker(ticker);
 		this.oldPrice = this.normalizePrice(oldPrice);
 		this.secType = this.normalizeSecType(secType);
