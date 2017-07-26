@@ -1,5 +1,9 @@
-import java.awt.EventQueue;
-import java.awt.Font;
+import java.util.*;
+import java.util.List;
+import java.io.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 import javax.swing.*;
 
@@ -12,26 +16,7 @@ import javax.swing.table.TableColumnModel;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 
-import java.awt.event.ActionListener;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Scanner;
-import java.awt.event.ActionEvent;
-
-import java.awt.BorderLayout;
-import java.awt.Color;
-
-
 public class Main extends JFrame{
-
-	private JFrame frmCowenTest;
 	private static Main window;
 	private JLabel msgLabel;
 	private JScrollPane oldPosScroll, tableScroll, newPosScrollPane;
@@ -66,36 +51,31 @@ public class Main extends JFrame{
 		setBounds(100, 100, 900, 850);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		getContentPane().setLayout(null);
+		
 		makeLabel();
 		
-		makeOldPosTextPane();
-		makeOldPosPanel();
-		makeOldPosScroll();
-		
-		makeTableScroll();
+		makeTextPane();
+		makePanel();
+		makeScroll();
 		makeTable();
 		
-		makeNewPosTextPane();
-		makeNewPosPanel();
-		makeNewPosScroll();
+		makePosBtn();
 		
-		makePosBtn("Load Positions");
-		makeUpdatedPosBtn("Load updated price");
-		makeNewPosBtn("Generate New Positions");
-		makeSaveAsBtn("Save As");
+		addPosBtnEvent();
+		addUpdatedPosBtnEvent();
+		addNewPosBtnEvent();
+		addSaveAsBtnEvent();
 		
 		setVisible(true);
-//		initialize();
 	}
 	
-	private void makeSaveAsBtn(String name) {
-		btnSaveAs = new JButton(name);
+	private void addSaveAsBtnEvent() {
 		btnSaveAs.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				FileWriter out = null;
 				JFileChooser saveFileChooser = new JFileChooser();
 				saveFileChooser.setFileFilter(new FileNameExtensionFilter(".txt", "txt"));
-				if (saveFileChooser.showSaveDialog(frmCowenTest) == JFileChooser.APPROVE_OPTION) {
+				if (saveFileChooser.showSaveDialog(window) == JFileChooser.APPROVE_OPTION) {
 					try {
 						File file = new File(saveFileChooser.getCurrentDirectory(), saveFileChooser.getSelectedFile().getName() + ".txt");
 						out = new FileWriter(file);
@@ -114,12 +94,9 @@ public class Main extends JFrame{
 				}
 			}
 		});
-		btnSaveAs.setBounds(713, 777, 117, 29);
-		add(btnSaveAs);
 	}
-
-	private void makeNewPosBtn(String name) {
-		btnGenerateNewPos = new JButton(name);
+	
+	private void addNewPosBtnEvent() {
 		btnGenerateNewPos.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				for (int row = 0; row < data.length; row++) {
@@ -141,57 +118,9 @@ public class Main extends JFrame{
 				newPosField.requestFocus();
 			}
 		});
-		btnGenerateNewPos.setBounds(465, 777, 197, 29);
-		add(btnGenerateNewPos);
-	}
-
-	private void makePosBtn(String name) {
-		 btnPos = new JButton(name);
-		 btnPos.addActionListener(new ActionListener() {
-				public void actionPerformed(ActionEvent e) {
-					JFileChooser openOldPosFileChooser = new JFileChooser();
-					openOldPosFileChooser.setFileFilter(new FileNameExtensionFilter(".txt", "txt"));
-
-					int returnValue = openOldPosFileChooser.showOpenDialog(window); //Have to reference the frame
-					File file = openOldPosFileChooser.getSelectedFile();
-					String fileName = file.getAbsolutePath();
-					
-					if (returnValue == JFileChooser.APPROVE_OPTION) {
-						try {
-							originalPositionList.clear();
-							String positionEntry;
-							FileReader reader = new FileReader(fileName);
-							BufferedReader br = new BufferedReader(reader);
-							Scanner scan = new Scanner(file);
-							
-							posField.read(br, null);
-							posField.requestFocus();
-							
-							msgLabel.setText("Loaded File");
-							while (scan.hasNextLine()) {
-								positionEntry = scan.nextLine();
-								if (positionEntry.length() >= 66) {
-									positionEntry = positionEntry.substring(0, 66);
-								}
-								originalPositionList.add(positionEntry);
-							}
-							br.close();
-							scan.close();
-						} catch(IOException ioe) {
-							System.out.println(ioe);
-							msgLabel.setText("Failed to load");
-						}
-					} else {
-						msgLabel.setText("No File Chosen");
-					}
-				}
-			});
-			btnPos.setBounds(58, 777, 117, 29);
-			add(btnPos);
 	}
 	
-	private void makeUpdatedPosBtn(String name) {
-		btnUpdatedPrice = new JButton(name);
+	private void addUpdatedPosBtnEvent() {
 		btnUpdatedPrice.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				JFileChooser openNewPosFileChooser = new JFileChooser();
@@ -254,73 +183,95 @@ public class Main extends JFrame{
 				columnModel.getColumn(7).setPreferredWidth(100);
 				columnModel.getColumn(8).setPreferredWidth(100);
 				columnModel.getColumn(9).setPreferredWidth(140);
-				
 			}
 		});
-		btnUpdatedPrice.setBounds(250, 777, 152, 29);
+	}
+	
+	private void addPosBtnEvent() {
+		 btnPos.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					JFileChooser openOldPosFileChooser = new JFileChooser();
+					openOldPosFileChooser.setFileFilter(new FileNameExtensionFilter(".txt", "txt"));
+
+					int returnValue = openOldPosFileChooser.showOpenDialog(window); //Have to reference the frame
+					File file = openOldPosFileChooser.getSelectedFile();
+					String fileName = file.getAbsolutePath();
+					
+					if (returnValue == JFileChooser.APPROVE_OPTION) {
+						try {
+							originalPositionList.clear();
+							String positionEntry;
+							FileReader reader = new FileReader(fileName);
+							BufferedReader br = new BufferedReader(reader);
+							Scanner scan = new Scanner(file);
+							
+							posField.read(br, null);
+							posField.requestFocus();
+							
+							msgLabel.setText("Loaded File");
+							while (scan.hasNextLine()) {
+								positionEntry = scan.nextLine();
+								if (positionEntry.length() >= 66) {
+									positionEntry = positionEntry.substring(0, 66);
+								}
+								originalPositionList.add(positionEntry);
+							}
+							br.close();
+							scan.close();
+						} catch(IOException ioe) {
+							System.out.println(ioe);
+							msgLabel.setText("Failed to load");
+						}
+					} else {
+						msgLabel.setText("No File Chosen");
+					}
+				}
+			});
+			btnPos.setBounds(58, 777, 117, 29);
+			add(btnPos);
+	}
+
+	private void makePosBtn() {
+		btnPos = new Button("Load Positions", 58, 777, 117, 29);
+		btnUpdatedPrice = new Button("Load updated price", 250, 777, 152, 29);
+		btnGenerateNewPos = new Button("Generate New Positions", 465, 777, 197, 29);
+		btnSaveAs = new Button("Save As", 713, 777, 117, 29);
+		
+		add(btnPos);
 		add(btnUpdatedPrice);
+		add(btnGenerateNewPos);
+		add(btnSaveAs);
 	}
-
-	private void makeNewPosScroll() {
-		newPosScrollPane = new JScrollPane(newPosPanel);
-		newPosScrollPane.setBounds(20, 500, 850, 250);
-		newPosScrollPane.getVerticalScrollBar().setUnitIncrement(16);
-		newPosScrollPane.getHorizontalScrollBar().setUnitIncrement(16);
-		add(newPosScrollPane);		
+	
+	private void makeTable() {
+		table = new Table();
+		tableScroll.setViewportView(table);
 	}
-
-	private void makeNewPosPanel() {
-		newPosPanel = new JPanel(new BorderLayout());
+	
+	private void makeScroll() {
+		oldPosScroll = new ScrollPane(oldPosPanel, 18, 53, 850, 210);
+		tableScroll = new ScrollPane(18, 280, 850, 203);
+		newPosScrollPane = new ScrollPane(newPosPanel, 20, 500, 850, 250);
+		add(oldPosScroll);
+		add(tableScroll);
+		add(newPosScrollPane);	
+	}
+	
+	private void makePanel() {
+		oldPosPanel = new Panel(new BorderLayout());
+		newPosPanel = new Panel(new BorderLayout());
+		oldPosPanel.add(posField);
 		newPosPanel.add(newPosField);
 	}
-
-	private void makeNewPosTextPane() {
-		newPosField = new JTextPane();
-		newPosField.setFont(new Font("monospaced", Font.PLAIN, 12));
-	}
-
-	private void makeTable() {
-		table = new JTable();
-		tableScroll.setViewportView(table);
-		table.setGridColor(Color.GRAY);
-		table.setRowHeight(18);
-		table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-		table.setTableHeader(null);
-		table.setCellSelectionEnabled(true);
-	}
-
-	private void makeTableScroll() {
-		tableScroll = new JScrollPane();
-		tableScroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-		tableScroll.setBounds(18, 280, 850, 203);
-		add(tableScroll);
-	}
-
-	private void makeOldPosScroll() {
-		oldPosScroll = new JScrollPane(oldPosPanel);
-		oldPosScroll.setLocation(18, 53);
-		oldPosScroll.setSize(850, 210);
-		oldPosScroll.getVerticalScrollBar().setUnitIncrement(16);
-		oldPosScroll.getHorizontalScrollBar().setUnitIncrement(16);
-		add(oldPosScroll);
+	
+	private void makeTextPane() {
+		posField = new TextPane();
+		newPosField = new TextPane();
 	}
 	
 	private void makeLabel() {
-		msgLabel = new JLabel("");
-		msgLabel.setFont(new Font("Lucida Grande", Font.PLAIN, 16));
-		msgLabel.setHorizontalAlignment(SwingConstants.CENTER);
-		msgLabel.setBounds(18, 6, 850, 35);
+		msgLabel = new Label("");
 		add(msgLabel);
-	}
-	
-	private void makeOldPosTextPane() {
-		posField = new JTextPane();
-		posField.setFont(new Font("monospaced", Font.PLAIN, 12));
-	}
-	
-	private void makeOldPosPanel() {
-		oldPosPanel = new JPanel(new BorderLayout());
-		oldPosPanel.add(posField);
 	}
 	
 	public void newPosition() {
@@ -344,73 +295,4 @@ public class Main extends JFrame{
 			}
 		}
 	}
-}
-
-class NewPosition {
-	String ticker, secType, oldPrice, newPrice, callOrPut;
-	
-	NewPosition (String ticker, double oldPrice, String secType, double newPrice, String callOrPut) {
-		this.ticker = this.normalizeTicker(ticker);
-		this.oldPrice = this.normalizePrice(oldPrice);
-		this.secType = this.normalizeSecType(secType);
-		this.newPrice = this.normalizePrice(newPrice);
-		this.callOrPut = this.normalizeCallOrPut(callOrPut);
-	}
-	
-	private String normalizePrice(double price) {
-		DecimalFormat df = new DecimalFormat("#.####");
-		String priceStr = Double.toString(Double.valueOf(df.format(price)));
-		
-		int lengthOfPrice = priceStr.substring(priceStr.indexOf(".")).length();
-		for(int i = 0; i < 7 - lengthOfPrice; i++) {
-			priceStr += "0";
-		}
-		priceStr = priceStr.replace(".", "");
-		priceStr = ("000000000000" + priceStr).substring(priceStr.length());
-		return priceStr;
-	}
-
-	private String normalizeCallOrPut(String callOrPut) {
-		if (callOrPut != null) {
-			return callOrPut.substring(0, 1);
-		}
-		return callOrPut;
-	}
-
-	private String normalizeSecType(String secType) {
-		if (secType != null) {
-			return secType.toUpperCase();
-		}
-		return secType;
-	}
-
-	private String normalizeTicker(String ticker) {
-		if(ticker != null && ticker.length() > 6) {
-			return ticker.substring(0, 6);
-		} else if (ticker == null) {
-			return "";
-		}
-		return ticker;
-	}
-
-	public String getTicker() {
-		return ticker;
-	}
-	
-	public String getSecType() {
-		return secType;
-	}
-	
-	public String getCallOrPut() {
-		return callOrPut;
-	}
-
-	public String getOldPrice() {
-		return oldPrice;
-	}
-
-	public String getNewPrice() {
-		return newPrice;
-	}
-
 }
